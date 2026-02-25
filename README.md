@@ -10,18 +10,18 @@ Before starting, ensure you have the following installed:
 Clone the repository and install dependencies:
 
 1. Clone the repo:
-git clone https://github.com/zuluw/game-catalog.git
+`git clone https://github.com/zuluw/game-catalog.git`
 
 2. Go to the project folder:
-cd GameCatalog
+`cd GameCatalog`
 
 3. Install packages:
-npm install
+`npm install`
 
 ### 3. Running the App
 Start the development server:
 
-npx expo start
+`npx expo start`
 
 ### 4. How to view
 - **On a physical phone**: Open the **Expo Go** app and scan the QR code displayed in your terminal. (Ensure your phone and PC are on the same Wi-Fi network).
