@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -10,47 +10,25 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { registerUser, loginUser } from "../database/db";
-import { useAuth } from "../context/AuthContext";
-import { useTranslation } from "react-i18next";
 import StatusModal from "../components/StatusModal";
+import { useAuthViewModel } from "../viewmodels/useAuthViewModel";
 
 export default function AuthScreen({ onReady }) {
-  const { t } = useTranslation();
-  const { login, continueAsGuest } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [modal, setModal] = useState({
-    visible: false,
-    type: "success",
-    title: "",
-    message: "",
-  });
-
-  const showStatus = (type, title, message) =>
-    setModal({ visible: true, type, title, message });
-
-  const handleAuth = () => {
-    if (!username || !password)
-      return showStatus("error", t("error"), t("err_fill"));
-
-    if (isLogin) {
-      const user = loginUser(username, password);
-      if (user) login(user);
-      else showStatus("error", t("error"), t("err_auth"));
-    } else {
-      try {
-        registerUser(username, password);
-        showStatus("success", t("success"), t("msg_reg_ok"));
-        setIsLogin(true);
-      } catch (e) {
-        showStatus("error", t("error"), t("err_exists"));
-      }
-    }
-  };
+  const {
+    isLogin,
+    setIsLogin,
+    username,
+    setUsername,
+    password,
+    setPassword,
+    showPassword,
+    setShowPassword,
+    modal,
+    setModal,
+    handleAuth,
+    continueAsGuest,
+    t,
+  } = useAuthViewModel();
 
   return (
     <View style={styles.container} onLayout={onReady}>
@@ -63,6 +41,7 @@ export default function AuthScreen({ onReady }) {
           <Text style={styles.title}>
             {isLogin ? t("login_tab") : t("register_tab")}
           </Text>
+
           <TextInput
             style={styles.input}
             placeholder={t("username_label")}
@@ -71,6 +50,7 @@ export default function AuthScreen({ onReady }) {
             onChangeText={setUsername}
             autoCapitalize="none"
           />
+
           <View style={styles.passwordWrap}>
             <TextInput
               style={styles.passInput}
@@ -91,6 +71,7 @@ export default function AuthScreen({ onReady }) {
               />
             </TouchableOpacity>
           </View>
+
           <TouchableOpacity onPress={handleAuth} style={styles.mainBtn}>
             <LinearGradient colors={["#FF8C00", "#FF4500"]} style={styles.grad}>
               <Text style={styles.btnText}>
@@ -98,6 +79,7 @@ export default function AuthScreen({ onReady }) {
               </Text>
             </LinearGradient>
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={() => setIsLogin(!isLogin)}
             style={styles.switchBtn}
@@ -106,11 +88,13 @@ export default function AuthScreen({ onReady }) {
               {isLogin ? t("switch_to_register") : t("switch_to_login")}
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity onPress={continueAsGuest} style={styles.guestBtn}>
             <Text style={styles.guestText}>{t("guest_btn")}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
       <StatusModal
         {...modal}
         onClose={() => setModal({ ...modal, visible: false })}

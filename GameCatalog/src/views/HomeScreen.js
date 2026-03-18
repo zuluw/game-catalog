@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
@@ -7,17 +7,19 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  LayoutAnimation,
   Dimensions,
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
 } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
-import { getGames, getStudiosSummary } from "../database/db";
 import { useAppTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import AddGameScreen from "./AddGameScreen";
+import { useHomeViewModel } from "../viewmodels/useHomeViewModel";
 
 const { width } = Dimensions.get("window");
 
@@ -26,39 +28,35 @@ export default function HomeScreen({ navigation }) {
   const { isDarkMode } = useAppTheme();
   const { user } = useAuth();
   const isFocused = useIsFocused();
+  const [isModalVisible, setModalVisible] = React.useState(false);
 
-  const [activeTab, setActiveTab] = useState("games");
-  const [games, setGames] = useState([]);
-  const [studios, setStudios] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isModalVisible, setModalVisible] = useState(false);
+  const {
+    data,
+    activeTab,
+    setActiveTab,
+    searchQuery,
+    setSearchQuery,
+    isOffline,
+    isLoading,
+    loadData,
+    genres,
+    selectedGenre,
+    setSelectedGenre,
+  } = useHomeViewModel(isFocused);
 
   const searchAnim = useRef(new Animated.Value(width * 0.6)).current;
 
-  useEffect(() => {
-    if (isFocused) loadData();
-  }, [isFocused]);
-
-  const loadData = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setGames(getGames());
-    setStudios(getStudiosSummary());
-  };
-
-  const onSearchFocus = () => {
+  const onSearchFocus = () =>
     Animated.spring(searchAnim, {
       toValue: width - 40,
       useNativeDriver: false,
     }).start();
-  };
-
   const onSearchBlur = () => {
-    if (searchQuery === "") {
+    if (searchQuery === "")
       Animated.spring(searchAnim, {
         toValue: width * 0.6,
         useNativeDriver: false,
       }).start();
-    }
   };
 
   const theme = isDarkMode
@@ -79,6 +77,14 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+
+      {isOffline && (
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineText}>{t("offline_mode")}</Text>
+        </View>
+      )}
+
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={[styles.logo, { color: theme.text }]}>
@@ -112,80 +118,106 @@ export default function HomeScreen({ navigation }) {
         </Animated.View>
 
         <View style={[styles.tabBar, { backgroundColor: theme.card }]}>
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              activeTab === "games" && { backgroundColor: theme.accent },
-            ]}
-            onPress={() => setActiveTab("games")}
-          >
-            <Text
+          {["games", "studios", "global"].map((tab) => (
+            <TouchableOpacity
+              key={tab}
               style={[
-                styles.tabText,
-                { color: activeTab === "games" ? "#fff" : theme.subText },
+                styles.tab,
+                activeTab === tab && { backgroundColor: theme.accent },
               ]}
+              onPress={() => setActiveTab(tab)}
             >
-              {t("tab_games").toUpperCase()}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              activeTab === "studios" && { backgroundColor: theme.accent },
-            ]}
-            onPress={() => setActiveTab("studios")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                { color: activeTab === "studios" ? "#fff" : theme.subText },
-              ]}
-            >
-              {t("tab_studios").toUpperCase()}
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: activeTab === tab ? "#fff" : theme.subText },
+                ]}
+              >
+                {t(`tab_${tab}`).toUpperCase()}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
-      <FlatList
-        data={
-          activeTab === "games"
-            ? games.filter((g) =>
-                g.title.toLowerCase().includes(searchQuery.toLowerCase()),
-              )
-            : studios
-        }
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.card, { backgroundColor: theme.card }]}
-            onPress={() =>
-              activeTab === "games" &&
-              navigation.navigate("Details", { game: item })
-            }
-          >
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[styles.cardTitle, { color: theme.text }]}
-                numberOfLines={1}
+      {activeTab === "global" && (
+        <View style={styles.genreFilter}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {genres.map((genre) => (
+              <TouchableOpacity
+                key={genre.id}
+                style={[
+                  styles.genreBtn,
+                  { backgroundColor: theme.card },
+                  selectedGenre === genre.id && {
+                    backgroundColor: theme.accent,
+                  },
+                ]}
+                onPress={() => setSelectedGenre(genre.id)}
               >
-                {item.title || item.name}
-              </Text>
-              <Text style={[styles.cardSub, { color: theme.subText }]}>
-                {item.studio || `${t("tab_games")}: ${item.gamesCount}`}
-              </Text>
-            </View>
-            <View style={[styles.ratingWrap, { backgroundColor: theme.bg }]}>
-              <Text style={[styles.ratingText, { color: theme.accent }]}>
-                {item.rating || item.avgRating}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+                <Text
+                  style={[
+                    styles.genreText,
+                    {
+                      color:
+                        selectedGenre === genre.id ? "#fff" : theme.subText,
+                    },
+                  ]}
+                >
+                  {genre.name.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
-      {user && (
+      {isLoading ? (
+        <ActivityIndicator
+          size="large"
+          color={theme.accent}
+          style={{ marginTop: 50 }}
+        />
+      ) : (
+        <FlatList
+          data={data}
+          keyExtractor={(item, index) => index.toString()}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
+          refreshing={isLoading}
+          onRefresh={loadData}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: theme.card }]}
+              onPress={() =>
+                activeTab !== "studios" &&
+                navigation.navigate("Details", { game: item })
+              }
+            >
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[styles.cardTitle, { color: theme.text }]}
+                  numberOfLines={1}
+                >
+                  {item.title || item.name}
+                </Text>
+                <Text style={[styles.cardSub, { color: theme.subText }]}>
+                  {item.studio ||
+                    (activeTab === "studios"
+                      ? `${t("tab_games")}: ${item.gamesCount}`
+                      : item.released)}
+                </Text>
+              </View>
+              <View style={[styles.ratingWrap, { backgroundColor: theme.bg }]}>
+                <Text style={[styles.ratingText, { color: theme.accent }]}>
+                  {item.rating || item.avgRating}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      )}
+
+      {user && activeTab === "games" && (
         <TouchableOpacity
           style={styles.fab}
           onPress={() => setModalVisible(true)}
@@ -211,6 +243,13 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  offlineBanner: {
+    backgroundColor: "#FF4444",
+    padding: 5,
+    paddingTop: 45,
+    alignItems: "center",
+  },
+  offlineText: { color: "white", fontSize: 10, fontWeight: "bold" },
   header: { paddingTop: 60, paddingHorizontal: 20, marginBottom: 10 },
   headerTop: {
     flexDirection: "row",
@@ -231,6 +270,14 @@ const styles = StyleSheet.create({
   tabBar: { flexDirection: "row", borderRadius: 25, padding: 5 },
   tab: { flex: 1, paddingVertical: 10, alignItems: "center", borderRadius: 20 },
   tabText: { fontWeight: "900", fontSize: 12 },
+  genreFilter: { marginBottom: 15, paddingLeft: 20 },
+  genreBtn: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 15,
+    marginRight: 10,
+  },
+  genreText: { fontSize: 10, fontWeight: "900", letterSpacing: 1 },
   card: {
     flexDirection: "row",
     justifyContent: "space-between",

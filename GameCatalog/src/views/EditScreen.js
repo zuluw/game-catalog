@@ -1,51 +1,32 @@
-import React, { useState, useRef } from "react";
+import React from "react";
 import {
   View,
-  TextInput,
-  StyleSheet,
   Text,
-  Animated,
+  TextInput,
   TouchableOpacity,
+  StyleSheet,
   ScrollView,
 } from "react-native";
-import { updateGame } from "../database/db";
-import { useTranslation } from "react-i18next";
-import { useAppTheme } from "../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useEditViewModel } from "../viewmodels/useEditViewModel";
 
 export default function EditScreen({ route, navigation }) {
   const { game } = route.params;
-  const { t } = useTranslation();
-  const { isDarkMode } = useAppTheme();
 
-  const [title, setTitle] = useState(game.title);
-  const [studio, setStudio] = useState(game.studio);
-  const [rating, setRating] = useState(game.rating.toString());
-  const [image, setImage] = useState(game.image || "");
-
-  const theme = isDarkMode
-    ? {
-        bg: "#0A0A0A",
-        card: "#1A1A1A",
-        text: "#FFFFFF",
-        accent: "#FF8C00",
-        input: "#121212",
-      }
-    : {
-        bg: "#F2F2F7",
-        card: "#FFFFFF",
-        text: "#000000",
-        accent: "#F50",
-        input: "#F2F2F7",
-      };
-
-  const handleSave = () => {
-    if (title.trim() && studio.trim()) {
-      updateGame(game.id, title, studio, parseFloat(rating) || 0, image);
-      navigation.popToTop();
-    }
-  };
+  const {
+    title,
+    setTitle,
+    studio,
+    setStudio,
+    rating,
+    setRating,
+    image,
+    setImage,
+    handleSave,
+    theme,
+    t,
+  } = useEditViewModel(game, navigation);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>

@@ -4,17 +4,14 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   ScrollView,
   Animated,
   Image,
 } from "react-native";
-import { deleteGame } from "../database/db";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAppTheme } from "../context/ThemeContext";
-import { useAuth } from "../context/AuthContext";
-import { useTranslation } from "react-i18next";
+import { useDetailsViewModel } from "../viewmodels/useDetailsViewModel";
+import StatusModal from "../components/StatusModal";
 
 const AnimatedBtn = ({ onPress, children, style }) => {
   const scale = useRef(new Animated.Value(1)).current;
@@ -39,47 +36,9 @@ const AnimatedBtn = ({ onPress, children, style }) => {
 
 export default function DetailsScreen({ route, navigation }) {
   const { game } = route.params;
-  const { isDarkMode } = useAppTheme();
-  const { user } = useAuth();
-  const { t } = useTranslation();
 
-  const isOwner = user && game.owner_id === user.id;
-
-  const theme = isDarkMode
-    ? {
-        bg: "#0A0A0A",
-        card: "#1A1A1A",
-        text: "#FFFFFF",
-        sub: "#777",
-        accent: "#FF8C00",
-      }
-    : {
-        bg: "#F2F2F7",
-        card: "#FFFFFF",
-        text: "#000000",
-        sub: "#8E8E93",
-        accent: "#F50",
-      };
-
-  const gameImg = game.image
-    ? { uri: game.image }
-    : {
-        uri: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=500",
-      };
-
-  const handleDelete = () => {
-    Alert.alert(t("delete_btn"), t("delete_confirm"), [
-      { text: t("cancel_btn"), style: "cancel" },
-      {
-        text: t("delete_btn"),
-        style: "destructive",
-        onPress: () => {
-          deleteGame(game.id);
-          navigation.goBack();
-        },
-      },
-    ]);
-  };
+  const { isOwner, gameImg, handleDelete, handleCloseModal, modal, theme, t } =
+    useDetailsViewModel(game, navigation);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -96,14 +55,16 @@ export default function DetailsScreen({ route, navigation }) {
             colors={["transparent", theme.bg]}
             style={styles.heroOverlay}
           />
-          <Text style={styles.heroTitle}>{game.title.toUpperCase()}</Text>
+          <Text style={styles.heroTitle}>
+            {(game.title || game.name || "").toUpperCase()}
+          </Text>
         </View>
 
         <View style={styles.content}>
           <View style={[styles.infoCard, { backgroundColor: theme.card }]}>
             <Text style={styles.label}>{t("label_studio")}</Text>
             <Text style={[styles.value, { color: theme.text }]}>
-              {game.studio}
+              {game.studio || t("tab_global")}
             </Text>
           </View>
 
@@ -149,6 +110,8 @@ export default function DetailsScreen({ route, navigation }) {
           )}
         </View>
       </ScrollView>
+
+      <StatusModal {...modal} onClose={handleCloseModal} />
     </View>
   );
 }

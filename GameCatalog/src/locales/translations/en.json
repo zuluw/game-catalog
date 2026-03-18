@@ -41,5 +41,7 @@
   "new_pass_placeholder": "New password",
   "update_btn": "UPDATE",
   "err_short": "Minimum 4 characters",
-  "msg_pass_ok": "Password updated successfully!"
+  "msg_pass_ok": "Password updated successfully!",
+  "tab_global": "Global",
+  "offline_mode": "OFFLINE MODE"
 }

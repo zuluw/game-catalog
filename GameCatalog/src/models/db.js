@@ -22,6 +22,16 @@ export const initDB = () => {
     );
   `);
 
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS api_cache (
+      id INTEGER PRIMARY KEY,
+      title TEXT NOT NULL,
+      rating REAL,
+      image TEXT,
+      released TEXT
+    );
+  `);
+
   try {
     db.execSync(`ALTER TABLE games ADD COLUMN owner_id INTEGER;`);
   } catch (e) {}
@@ -33,7 +43,7 @@ export const initDB = () => {
       [
         "The Witcher 3",
         "CD Projekt RED",
-        9.8,
+        4.9,
         "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.webp",
         null,
       ],
@@ -77,10 +87,25 @@ export const updateGame = (id, title, studio, rating, image) => {
 };
 
 export const getGames = () => db.getAllSync("SELECT * FROM games");
+
 export const deleteGame = (id) =>
   db.runSync("DELETE FROM games WHERE id = ?", [id]);
+
 export const getStudiosSummary = () =>
   db.getAllSync(`
     SELECT studio as name, COUNT(*) as gamesCount, ROUND(AVG(rating), 1) as avgRating 
     FROM games GROUP BY studio ORDER BY avgRating DESC
 `);
+
+export const saveApiCache = (games) => {
+  db.runSync("DELETE FROM api_cache");
+
+  games.forEach((game) => {
+    db.runSync(
+      "INSERT INTO api_cache (id, title, rating, image, released) VALUES (?, ?, ?, ?, ?)",
+      [game.id, game.name, game.rating, game.background_image, game.released],
+    );
+  });
+};
+
+export const getApiCache = () => db.getAllSync("SELECT * FROM api_cache");

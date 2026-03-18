@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -11,9 +11,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { addGame } from "../database/db";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
+import { useAddGameViewModel } from "../viewmodels/useAddGameViewModel";
 
 export default function AddGameScreen({
   isVisible,
@@ -23,22 +23,18 @@ export default function AddGameScreen({
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [title, setTitle] = useState("");
-  const [studio, setStudio] = useState("");
-  const [rating, setRating] = useState("");
-  const [image, setImage] = useState("");
 
-  const handleSave = () => {
-    if (title.trim() && studio.trim() && user) {
-      addGame(title, studio, parseFloat(rating) || 0, image, user.id);
-      setTitle("");
-      setStudio("");
-      setRating("");
-      setImage("");
-      onClose();
-      onRefresh();
-    }
-  };
+  const {
+    title,
+    setTitle,
+    studio,
+    setStudio,
+    rating,
+    setRating,
+    image,
+    setImage,
+    handleSave,
+  } = useAddGameViewModel(user, onClose, onRefresh);
 
   return (
     <Modal animationType="slide" transparent={true} visible={isVisible}>

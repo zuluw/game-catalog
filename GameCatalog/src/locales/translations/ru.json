@@ -42,5 +42,7 @@
   "new_pass_placeholder": "Новый пароль",
   "update_btn": "ОБНОВИТЬ",
   "err_short": "Минимум 4 символа",
-  "msg_pass_ok": "Пароль успешно обновлен!"
+  "msg_pass_ok": "Пароль успешно обновлен!",
+  "tab_global": "Мировые",
+  "offline_mode": "ОФФЛАЙН-РЕЖИМ"
 }

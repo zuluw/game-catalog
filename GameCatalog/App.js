@@ -16,14 +16,14 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { ThemeProvider, useAppTheme } from "./src/context/ThemeContext";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
-import { initDB } from "./src/database/db";
+import { initDB } from "./src/models/db";
 import { loadSavedLanguage } from "./src/locales/i18n";
 
-import HomeScreen from "./src/screens/HomeScreen";
-import DetailsScreen from "./src/screens/DetailsScreen";
-import SettingsScreen from "./src/screens/SettingsScreen";
-import EditScreen from "./src/screens/EditScreen";
-import AuthScreen from "./src/screens/AuthScreen";
+import HomeScreen from "./src/views/HomeScreen";
+import DetailsScreen from "./src/views/DetailsScreen";
+import SettingsScreen from "./src/views/SettingsScreen";
+import EditScreen from "./src/views/EditScreen";
+import AuthScreen from "./src/views/AuthScreen";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
