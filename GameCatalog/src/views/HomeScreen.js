@@ -42,6 +42,8 @@ export default function HomeScreen({ navigation }) {
     genres,
     selectedGenre,
     setSelectedGenre,
+    sortBy,
+    toggleSort,
   } = useHomeViewModel(isFocused);
 
   const searchAnim = useRef(new Animated.Value(width * 0.6)).current;
@@ -51,6 +53,7 @@ export default function HomeScreen({ navigation }) {
       toValue: width - 40,
       useNativeDriver: false,
     }).start();
+
   const onSearchBlur = () => {
     if (searchQuery === "")
       Animated.spring(searchAnim, {
@@ -99,26 +102,65 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <Animated.View
-          style={[
-            styles.searchBar,
-            { width: searchAnim, backgroundColor: theme.card },
-          ]}
-        >
-          <Ionicons name="search" size={18} color={theme.subText} />
-          <TextInput
-            placeholder={t("search_placeholder")}
-            placeholderTextColor={theme.subText}
-            style={[styles.searchInput, { color: theme.text }]}
-            onFocus={onSearchFocus}
-            onBlur={onSearchBlur}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </Animated.View>
+        <View style={styles.searchRow}>
+          <Animated.View
+            style={[
+              styles.searchBar,
+              { width: searchAnim, backgroundColor: theme.card },
+            ]}
+          >
+            <Ionicons name="search" size={18} color={theme.subText} />
+            <TextInput
+              placeholder={t("search_placeholder")}
+              placeholderTextColor={theme.subText}
+              style={[styles.searchInput, { color: theme.text }]}
+              onFocus={onSearchFocus}
+              onBlur={onSearchBlur}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </Animated.View>
+        </View>
+
+        {activeTab !== "studios" && activeTab !== "notif" && (
+          <View style={styles.sortContainer}>
+            {[
+              { id: "title", icon: "text", label: "sort_title" },
+              { id: "rating", icon: "star", label: "sort_rating" },
+              { id: "date", icon: "calendar", label: "sort_date" },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => toggleSort(item.id)}
+                style={[
+                  styles.sortBtn,
+                  { backgroundColor: theme.card },
+                  sortBy === item.id && {
+                    borderColor: theme.accent,
+                    borderWidth: 1,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={item.icon}
+                  size={14}
+                  color={sortBy === item.id ? theme.accent : theme.subText}
+                />
+                <Text
+                  style={[
+                    styles.sortBtnText,
+                    { color: sortBy === item.id ? theme.text : theme.subText },
+                  ]}
+                >
+                  {t(item.label)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <View style={[styles.tabBar, { backgroundColor: theme.card }]}>
-          {["games", "studios", "global"].map((tab) => (
+          {["games", "studios", "global", "notif"].map((tab) => (
             <TouchableOpacity
               key={tab}
               style={[
@@ -164,7 +206,7 @@ export default function HomeScreen({ navigation }) {
                     },
                   ]}
                 >
-                  {genre.name.toUpperCase()}
+                  {t(genre.name).toUpperCase()}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -185,35 +227,78 @@ export default function HomeScreen({ navigation }) {
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
           refreshing={isLoading}
           onRefresh={loadData}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: theme.card }]}
-              onPress={() =>
-                activeTab !== "studios" &&
-                navigation.navigate("Details", { game: item })
-              }
-            >
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[styles.cardTitle, { color: theme.text }]}
-                  numberOfLines={1}
+          ListEmptyComponent={
+            activeTab === "notif" ? (
+              <Text style={[styles.emptyText, { color: theme.subText }]}>
+                {t("no_notif")}
+              </Text>
+            ) : null
+          }
+          renderItem={({ item }) => {
+            if (activeTab === "notif") {
+              return (
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: theme.card,
+                      borderLeftWidth: 4,
+                      borderLeftColor: theme.accent,
+                    },
+                  ]}
                 >
-                  {item.title || item.name}
-                </Text>
-                <Text style={[styles.cardSub, { color: theme.subText }]}>
-                  {item.studio ||
-                    (activeTab === "studios"
-                      ? `${t("tab_games")}: ${item.gamesCount}`
-                      : item.released)}
-                </Text>
-              </View>
-              <View style={[styles.ratingWrap, { backgroundColor: theme.bg }]}>
-                <Text style={[styles.ratingText, { color: theme.accent }]}>
-                  {item.rating || item.avgRating}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.cardTitle, { color: theme.text }]}>
+                      {item.title}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.cardSub,
+                        { color: theme.subText, textTransform: "none" },
+                      ]}
+                    >
+                      {item.body}
+                    </Text>
+                    <Text style={[styles.notifDate, { color: theme.accent }]}>
+                      {t("notif_received")}: {item.date}
+                    </Text>
+                  </View>
+                </View>
+              );
+            }
+
+            return (
+              <TouchableOpacity
+                style={[styles.card, { backgroundColor: theme.card }]}
+                onPress={() =>
+                  activeTab !== "studios" &&
+                  navigation.navigate("Details", { game: item })
+                }
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[styles.cardTitle, { color: theme.text }]}
+                    numberOfLines={1}
+                  >
+                    {item.title || item.name}
+                  </Text>
+                  <Text style={[styles.cardSub, { color: theme.subText }]}>
+                    {item.studio ||
+                      (activeTab === "studios"
+                        ? `${t("tab_games")}: ${item.gamesCount}`
+                        : item.released)}
+                  </Text>
+                </View>
+                <View
+                  style={[styles.ratingWrap, { backgroundColor: theme.bg }]}
+                >
+                  <Text style={[styles.ratingText, { color: theme.accent }]}>
+                    {item.rating || item.avgRating}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
         />
       )}
 
@@ -258,15 +343,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logo: { fontSize: 26, fontWeight: "900", letterSpacing: 2 },
+  searchRow: { marginBottom: 15 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     height: 45,
     borderRadius: 20,
     paddingHorizontal: 15,
-    marginBottom: 20,
   },
   searchInput: { flex: 1, marginLeft: 10, fontWeight: "600" },
+  sortContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    gap: 8,
+  },
+  sortBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 5,
+  },
+  sortBtnText: { fontSize: 10, fontWeight: "bold" },
   tabBar: { flexDirection: "row", borderRadius: 25, padding: 5 },
   tab: { flex: 1, paddingVertical: 10, alignItems: "center", borderRadius: 20 },
   tabText: { fontWeight: "900", fontSize: 12 },
@@ -302,6 +403,17 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   ratingText: { fontWeight: "900", fontSize: 16 },
+  notifDate: {
+    fontSize: 10,
+    fontWeight: "bold",
+    marginTop: 8,
+  },
+  emptyText: {
+    textAlign: "center",
+    marginTop: 50,
+    fontSize: 14,
+    fontWeight: "bold",
+  },
   fab: {
     position: "absolute",
     bottom: 30,

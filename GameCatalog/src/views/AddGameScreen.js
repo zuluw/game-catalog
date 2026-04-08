@@ -8,6 +8,8 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -32,8 +34,9 @@ export default function AddGameScreen({
     rating,
     setRating,
     image,
-    setImage,
+    pickImage,
     handleSave,
+    isUploading,
   } = useAddGameViewModel(user, onClose, onRefresh);
 
   return (
@@ -47,10 +50,28 @@ export default function AddGameScreen({
             <Text style={[styles.modalTitle, { color: theme.text }]}>
               {t("add_btn").toUpperCase()}
             </Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={onClose} disabled={isUploading}>
               <Ionicons name="close-circle" size={30} color={theme.subText} />
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={[styles.imagePicker, { backgroundColor: theme.bg }]}
+            onPress={pickImage}
+          >
+            {image ? (
+              <Image source={{ uri: image }} style={styles.preview} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="camera" size={30} color={theme.subText} />
+                <Text
+                  style={{ color: theme.subText, fontSize: 10, marginTop: 5 }}
+                >
+                  {t("label_image").toUpperCase()}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
           <TextInput
             placeholder={t("game_name")}
@@ -61,6 +82,7 @@ export default function AddGameScreen({
               styles.input,
               { backgroundColor: theme.bg, color: theme.text },
             ]}
+            editable={!isUploading}
           />
           <TextInput
             placeholder={t("label_studio")}
@@ -71,6 +93,7 @@ export default function AddGameScreen({
               styles.input,
               { backgroundColor: theme.bg, color: theme.text },
             ]}
+            editable={!isUploading}
           />
           <TextInput
             placeholder={t("label_rating")}
@@ -82,26 +105,23 @@ export default function AddGameScreen({
               styles.input,
               { backgroundColor: theme.bg, color: theme.text },
             ]}
-          />
-          <TextInput
-            placeholder={t("label_image")}
-            placeholderTextColor="#666"
-            value={image}
-            onChangeText={setImage}
-            style={[
-              styles.input,
-              { backgroundColor: theme.bg, color: theme.text },
-            ]}
+            editable={!isUploading}
           />
 
-          <TouchableOpacity onPress={handleSave}>
+          <TouchableOpacity onPress={handleSave} disabled={isUploading}>
             <LinearGradient
-              colors={[theme.accent, "#FF8C00"]}
+              colors={
+                isUploading ? ["#555", "#333"] : [theme.accent, "#FF8C00"]
+              }
               style={styles.saveBtn}
             >
-              <Text style={styles.saveBtnText}>
-                {t("save_btn").toUpperCase()}
-              </Text>
+              {isUploading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.saveBtnText}>
+                  {t("save_btn").toUpperCase()}
+                </Text>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -124,6 +144,16 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   modalTitle: { fontSize: 18, fontWeight: "900", letterSpacing: 1 },
+  imagePicker: {
+    height: 120,
+    borderRadius: 20,
+    marginBottom: 15,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  preview: { width: "100%", height: "100%" },
+  imagePlaceholder: { alignItems: "center" },
   input: { borderRadius: 15, padding: 18, marginBottom: 15, fontSize: 16 },
   saveBtn: {
     padding: 20,

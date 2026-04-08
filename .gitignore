@@ -42,3 +42,7 @@ yarn-error.*
 
 *.docx
 .idea/
+
+node_modules/
+GameCatalog/android/
+GameCatalog/ios/

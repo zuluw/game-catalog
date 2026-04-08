@@ -6,6 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Image,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,14 +26,18 @@ export default function EditScreen({ route, navigation }) {
     rating,
     setRating,
     image,
-    setImage,
+    pickImage,
     handleSave,
+    isSaving,
     theme,
     t,
   } = useEditViewModel(game, navigation);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={[styles.container, { backgroundColor: theme.bg }]}
+    >
       <TouchableOpacity
         style={styles.backBtn}
         onPress={() => navigation.goBack()}
@@ -38,7 +46,7 @@ export default function EditScreen({ route, navigation }) {
       </TouchableOpacity>
 
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+        showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={[styles.label, { color: theme.text }]}>
@@ -46,6 +54,19 @@ export default function EditScreen({ route, navigation }) {
         </Text>
 
         <View style={[styles.form, { backgroundColor: theme.card }]}>
+          <TouchableOpacity
+            style={[styles.imagePicker, { backgroundColor: theme.input }]}
+            onPress={pickImage}
+          >
+            {image ? (
+              <Image source={{ uri: image }} style={styles.preview} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="camera" size={30} color="#555" />
+              </View>
+            )}
+          </TouchableOpacity>
+
           <TextInput
             style={[
               styles.input,
@@ -77,23 +98,23 @@ export default function EditScreen({ route, navigation }) {
             placeholder={t("label_rating")}
             placeholderTextColor="#555"
           />
-          <TextInput
-            style={[
-              styles.input,
-              { backgroundColor: theme.input, color: theme.text },
-            ]}
-            value={image}
-            onChangeText={setImage}
-            placeholder={t("label_image")}
-            placeholderTextColor="#555"
-          />
 
-          <TouchableOpacity onPress={handleSave} style={{ marginTop: 15 }}>
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={isSaving}
+            style={{ marginTop: 15 }}
+          >
             <LinearGradient
               colors={[theme.accent, "#FF3D00"]}
               style={styles.btnSave}
             >
-              <Text style={styles.btnText}>{t("save_btn").toUpperCase()}</Text>
+              {isSaving ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.btnText}>
+                  {t("save_btn").toUpperCase()}
+                </Text>
+              )}
             </LinearGradient>
           </TouchableOpacity>
 
@@ -107,7 +128,7 @@ export default function EditScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -122,6 +143,16 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   form: { padding: 25, borderRadius: 30, elevation: 10 },
+  imagePicker: {
+    height: 150,
+    borderRadius: 15,
+    marginBottom: 15,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  preview: { width: "100%", height: "100%" },
+  imagePlaceholder: { alignItems: "center" },
   input: {
     borderRadius: 15,
     padding: 18,

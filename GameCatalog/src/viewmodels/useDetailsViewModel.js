@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import { deleteGame as dbDeleteGame } from "../models/db";
+import { deleteGameFromCloud } from "../models/firebase";
+import { deleteImageFromCloud } from "../services/ImageService";
 import { useAppTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -32,14 +34,26 @@ export const useDetailsViewModel = (game, navigation) => {
       {
         text: t("delete_btn"),
         style: "destructive",
-        onPress: () => {
-          dbDeleteGame(game.id);
-          setModal({
-            visible: true,
-            type: "success",
-            title: t("success"),
-            message: t("msg_pass_ok"),
-          });
+        onPress: async () => {
+          try {
+            if (game.image_id) {
+              await deleteImageFromCloud(game.image_id);
+            }
+
+            dbDeleteGame(game.id);
+
+            await deleteGameFromCloud(game.firebase_id || game.title, user?.id);
+
+            setModal({
+              visible: true,
+              type: "success",
+              title: t("success"),
+              message: t("msg_pass_ok"),
+            });
+          } catch (e) {
+            console.error("Error during complete deletion:", e);
+            alert("An error occurred while deleting data from the cloud.");
+          }
         },
       },
     ]);

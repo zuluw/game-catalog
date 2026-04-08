@@ -44,5 +44,16 @@
   "err_short": "Минимум 4 символа",
   "msg_pass_ok": "Пароль успешно обновлен!",
   "tab_global": "Мировые",
-  "offline_mode": "ОФФЛАЙН-РЕЖИМ"
+  "offline_mode": "ОФФЛАЙН-РЕЖИМ",
+  "sort_title": "По названию",
+  "sort_rating": "По рейтингу",
+  "sort_date": "По дате",
+  "filter_all": "Все",
+  "notifications": "Уведомления",
+  "notif_description": "Ежедневные напоминания",
+  "notif_title": "Игровой Каталог 🎮",
+  "notif_body": "Пора проверить, не появились ли новые игры в каталоге!",
+  "tab_notif": "История",
+  "no_notif": "Уведомлений пока нет",
+  "notif_received": "Получено"
 }

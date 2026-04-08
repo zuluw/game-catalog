@@ -7,6 +7,7 @@ import {
   StatusBar,
 } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
+import * as Notifications from "expo-notifications";
 import {
   NavigationContainer,
   DefaultTheme,
@@ -16,8 +17,10 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { ThemeProvider, useAppTheme } from "./src/context/ThemeContext";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
-import { initDB } from "./src/models/db";
+import { initDB, addNotificationRecord } from "./src/models/db";
 import { loadSavedLanguage } from "./src/locales/i18n";
+
+import "./src/models/firebase";
 
 import HomeScreen from "./src/views/HomeScreen";
 import DetailsScreen from "./src/views/DetailsScreen";
@@ -25,17 +28,43 @@ import SettingsScreen from "./src/views/SettingsScreen";
 import EditScreen from "./src/views/EditScreen";
 import AuthScreen from "./src/views/AuthScreen";
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
+SplashScreen.preventAutoHideAsync().catch(() => {});
 const Stack = createNativeStackNavigator();
 
 function AppNavigator({ onReady }) {
   const { isDarkMode } = useAppTheme();
   const { user, isGuest } = useAuth();
 
-  if (!user && !isGuest) {
-    return <AuthScreen onReady={onReady} />;
-  }
+  useEffect(() => {
+    const receivedSub = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        const { title, body } = notification.request.content;
+        addNotificationRecord(title, body, user?.id);
+      },
+    );
+
+    const responseSub = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const { title, body } = response.notification.request.content;
+        addNotificationRecord(title, body, user?.id);
+      },
+    );
+
+    return () => {
+      receivedSub.remove();
+      responseSub.remove();
+    };
+  }, [user]);
+
+  if (!user && !isGuest) return <AuthScreen onReady={onReady} />;
 
   return (
     <View style={styles.flex} onLayout={onReady}>
@@ -71,9 +100,7 @@ export default function App() {
   }, []);
 
   const onLayoutRootView = useCallback(async () => {
-    if (appIsReady) {
-      await SplashScreen.hideAsync().catch(() => {});
-    }
+    if (appIsReady) await SplashScreen.hideAsync().catch(() => {});
   }, [appIsReady]);
 
   if (!appIsReady) {

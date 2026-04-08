@@ -32,6 +32,8 @@ export default function SettingsScreen({ navigation }) {
     handleChangePassword,
     changeLang,
     theme,
+    notificationsEnabled,
+    toggleNotifications,
   } = useSettingsViewModel();
 
   return (
@@ -65,6 +67,32 @@ export default function SettingsScreen({ navigation }) {
               {user ? t("logout_btn") : t("login_btn")}
             </Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={[styles.section, { backgroundColor: theme.card }]}>
+          <View style={styles.rowBetween}>
+            <View style={styles.row}>
+              <Ionicons
+                name="notifications-outline"
+                size={20}
+                color={theme.accent}
+              />
+              <View>
+                <Text style={[styles.sectionLabel, { color: theme.text }]}>
+                  {t("notifications").toUpperCase()}
+                </Text>
+                <Text style={{ fontSize: 10, color: theme.sub }}>
+                  {t("notif_description")}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={toggleNotifications}
+              trackColor={{ false: "#333", true: theme.accent }}
+              thumbColor={"#FFF"}
+            />
+          </View>
         </View>
 
         {user && (
