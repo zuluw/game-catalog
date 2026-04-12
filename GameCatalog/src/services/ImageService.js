@@ -1,6 +1,6 @@
 import { encode } from "base-64";
 
-const privateKey = "private_gNs7do3sJaI8MnLXNbSle3cQ1sU=";
+const privateKey = "user-secret";
 const base64Auth = encode(privateKey + ":");
 
 export const uploadImage = async (fileUri) => {
