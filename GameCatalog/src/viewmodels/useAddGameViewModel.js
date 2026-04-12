@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { addGame as dbAddGame } from "../models/db";
+import * as Location from "expo-location"; 
 import { saveGameToCloud } from "../models/firebase";
 import { uploadImage } from "../services/ImageService";
 
@@ -23,6 +23,29 @@ export const useAddGameViewModel = (user, onClose, onRefresh) => {
     }
   };
 
+  const fetchCurrentLocation = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Permission to access location was denied");
+        return "Unknown Location";
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+
+      let address = await Location.reverseGeocodeAsync(location.coords);
+
+      if (address.length > 0) {
+        const item = address[0];
+        return `${item.city || item.region || "Unknown City"}, ${item.country}`;
+      }
+      return "Unknown Location";
+    } catch (error) {
+      console.error("Location error:", error);
+      return "Unknown Location";
+    }
+  };
+
   const handleSave = async () => {
     if (title.trim() && studio.trim() && user) {
       setIsUploading(true);
@@ -30,7 +53,11 @@ export const useAddGameViewModel = (user, onClose, onRefresh) => {
         let finalRating = parseFloat(rating) || 0;
         if (finalRating > 5) finalRating = 5;
 
-        const uploadResult = await uploadImage(image);
+        const [locationName, uploadResult] = await Promise.all([
+          fetchCurrentLocation(),
+          uploadImage(image),
+        ]);
+
         const cloudImageUrl = uploadResult.url || "";
         const imageKitFileId = uploadResult.fileId || null;
 
@@ -41,20 +68,11 @@ export const useAddGameViewModel = (user, onClose, onRefresh) => {
           image: cloudImageUrl,
           image_id: imageKitFileId,
           owner_id: user.id,
+          location: locationName,
           createdAt: new Date().toISOString(),
         };
 
-        const fbId = await saveGameToCloud(gameData);
-
-        dbAddGame(
-          title,
-          studio,
-          finalRating,
-          cloudImageUrl,
-          user.id,
-          fbId,
-          imageKitFileId,
-        );
+        await saveGameToCloud(gameData);
 
         setTitle("");
         setStudio("");
@@ -62,7 +80,7 @@ export const useAddGameViewModel = (user, onClose, onRefresh) => {
         setImage("");
 
         onClose();
-        onRefresh();
+        if (onRefresh) onRefresh();
       } catch (e) {
         console.error("Save process error:", e);
         alert("Save Error");

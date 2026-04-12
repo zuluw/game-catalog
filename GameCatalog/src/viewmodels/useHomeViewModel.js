@@ -12,7 +12,7 @@ import {
   syncCloudGamesToLocal,
 } from "../models/db";
 import { fetchPopularGames } from "../models/api";
-import { getGamesFromCloud } from "../models/firebase";
+import { subscribeToGamesCloud } from "../models/firebase";
 import { useAuth } from "../context/AuthContext";
 
 const GENRES = [
@@ -47,12 +47,37 @@ export const useHomeViewModel = (isFocused) => {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    let unsubscribeCloud;
+
+    if (isFocused) {
+      console.log("Starting global real-time subscription...");
+
+      unsubscribeCloud = subscribeToGamesCloud((cloudGames) => {
+        console.log("Global update received from Firebase!");
+
+        syncCloudGamesToLocal(cloudGames);
+
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+        setLocalGames(getGames());
+        setStudios(getStudiosSummary());
+      });
+    }
+
+    return () => {
+      if (unsubscribeCloud) {
+        console.log("Stopping cloud subscription...");
+        unsubscribeCloud();
+      }
+    };
+  }, [isFocused]);
+
   const loadData = useCallback(async () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsLoading(true);
 
-    const storedGames = getGames();
-    setLocalGames(storedGames);
+    setLocalGames(getGames());
     setStudios(getStudiosSummary());
     setNotifications(getNotificationHistory(user?.id));
 
@@ -60,16 +85,6 @@ export const useHomeViewModel = (isFocused) => {
       const netState = await NetInfo.fetch();
 
       if (netState.isConnected) {
-        if (user) {
-          console.log("Sync with Firebase...");
-          const cloudGames = await getGamesFromCloud(user.id);
-          if (cloudGames.length > 0) {
-            syncCloudGamesToLocal(cloudGames);
-            setLocalGames(getGames());
-            setStudios(getStudiosSummary());
-          }
-        }
-
         const data = await fetchPopularGames(selectedGenre);
         saveApiCache(data);
         setGlobalGames(data);

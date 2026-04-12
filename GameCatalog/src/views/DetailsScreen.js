@@ -37,20 +37,34 @@ const AnimatedBtn = ({ onPress, children, style }) => {
 export default function DetailsScreen({ route, navigation }) {
   const { game } = route.params;
 
-  const { isOwner, gameImg, handleDelete, handleCloseModal, modal, theme, t } =
-    useDetailsViewModel(game, navigation);
+  const {
+    isOwner,
+    gameImg,
+    handleDelete,
+    handleCloseModal,
+    handleShare,
+    modal,
+    theme,
+    t,
+  } = useDetailsViewModel(game, navigation);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.imageContainer}>
           <Image source={gameImg} style={styles.heroImage} />
+
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="chevron-back" size={28} color="white" />
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+            <Ionicons name="share-social" size={24} color="white" />
+          </TouchableOpacity>
+
           <LinearGradient
             colors={["transparent", theme.bg]}
             style={styles.heroOverlay}
@@ -62,14 +76,32 @@ export default function DetailsScreen({ route, navigation }) {
 
         <View style={styles.content}>
           <View style={[styles.infoCard, { backgroundColor: theme.card }]}>
-            <Text style={styles.label}>{t("label_studio")}</Text>
+            <Text style={styles.label}>{t("label_studio").toUpperCase()}</Text>
             <Text style={[styles.value, { color: theme.text }]}>
               {game.studio || t("tab_global")}
             </Text>
           </View>
 
+          {game.location && (
+            <View style={[styles.infoCard, { backgroundColor: theme.card }]}>
+              <Text style={styles.label}>
+                {t("label_location").toUpperCase()}
+              </Text>
+              <View style={styles.locationRow}>
+                <Ionicons
+                  name="location-sharp"
+                  size={20}
+                  color={theme.accent}
+                />
+                <Text style={[styles.locationValue, { color: theme.text }]}>
+                  {game.location}
+                </Text>
+              </View>
+            </View>
+          )}
+
           <View style={[styles.infoCard, { backgroundColor: theme.card }]}>
-            <Text style={styles.label}>{t("label_rating")}</Text>
+            <Text style={styles.label}>{t("label_rating").toUpperCase()}</Text>
             <View style={styles.ratingRow}>
               <Text style={[styles.ratingValue, { color: theme.text }]}>
                 {game.rating}
@@ -129,6 +161,15 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 15,
   },
+  shareBtn: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    padding: 10,
+    borderRadius: 15,
+  },
   heroOverlay: { ...StyleSheet.absoluteFillObject },
   heroTitle: {
     color: "white",
@@ -149,6 +190,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   value: { fontSize: 24, fontWeight: "800" },
+  locationRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
+  locationValue: { fontSize: 18, fontWeight: "700", marginLeft: 5 },
   ratingRow: { flexDirection: "row", alignItems: "center" },
   ratingValue: { fontSize: 44, fontWeight: "900" },
   actions: { gap: 15, marginTop: 10 },

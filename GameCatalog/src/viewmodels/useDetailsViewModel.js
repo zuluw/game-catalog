@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert } from "react-native";
+import { Alert, Share } from "react-native";
 import { deleteGame as dbDeleteGame } from "../models/db";
 import { deleteGameFromCloud } from "../models/firebase";
 import { deleteImageFromCloud } from "../services/ImageService";
@@ -27,6 +27,27 @@ export const useDetailsViewModel = (game, navigation) => {
       : {
           uri: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=500",
         };
+
+  const handleShare = async () => {
+    try {
+      const message =
+        `🎮 ${game.title || game.name}\n` +
+        `${t("label_studio")}: ${game.studio || "Global"}\n` +
+        `${t("label_rating")}: ${game.rating}/5\n` +
+        (game.location ? `📍 ${t("label_location")}: ${game.location}\n` : "") +
+        `\nSent via Game Catalog App`;
+
+      const result = await Share.share({
+        message: message,
+      });
+
+      if (result.action === Share.sharedAction) {
+        console.log("Successfully shared");
+      }
+    } catch (error) {
+      alert(error.message);
+    }
+  };
 
   const handleDelete = () => {
     Alert.alert(t("delete_btn"), t("delete_confirm"), [
@@ -85,6 +106,7 @@ export const useDetailsViewModel = (game, navigation) => {
     gameImg,
     handleDelete,
     handleCloseModal,
+    handleShare,
     modal,
     theme,
     t,

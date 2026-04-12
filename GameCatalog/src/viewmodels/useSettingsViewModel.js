@@ -3,18 +3,24 @@ import { useTranslation } from "react-i18next";
 import { useAppTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { updateUserPassword, addNotificationRecord } from "../models/db";
+import { updateNicknameInCloud } from "../models/firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
+import * as LocalAuthentication from "expo-local-authentication";
 import { Platform } from "react-native";
 
 export const useSettingsViewModel = () => {
   const { t, i18n } = useTranslation();
   const { isDarkMode, toggleTheme } = useAppTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, login } = useAuth();
 
   const [newPassword, setNewPassword] = useState("");
+  const [newNickname, setNewNickname] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  const [biometricsEnabled, setBiometricsEnabled] = useState(false);
+  const [isBiometricSupported, setIsBiometricSupported] = useState(false);
 
   const [modal, setModal] = useState({
     visible: false,
@@ -24,9 +30,16 @@ export const useSettingsViewModel = () => {
   });
 
   useEffect(() => {
-    loadNotificationStatus();
+    loadSettings();
+    checkBiometricSupport();
     setupNotificationChannel();
   }, []);
+
+  const checkBiometricSupport = async () => {
+    const compatible = await LocalAuthentication.hasHardwareAsync();
+    const enrolled = await LocalAuthentication.isEnrolledAsync();
+    setIsBiometricSupported(compatible && enrolled);
+  };
 
   const setupNotificationChannel = async () => {
     if (Platform.OS === "android") {
@@ -39,9 +52,35 @@ export const useSettingsViewModel = () => {
     }
   };
 
-  const loadNotificationStatus = async () => {
-    const savedStatus = await AsyncStorage.getItem("notifications-enabled");
-    setNotificationsEnabled(savedStatus === "true");
+  const loadSettings = async () => {
+    const savedNotifStatus = await AsyncStorage.getItem(
+      "notifications-enabled",
+    );
+    setNotificationsEnabled(savedNotifStatus === "true");
+
+    const savedBioStatus = await AsyncStorage.getItem("biometrics-enabled");
+    setBiometricsEnabled(savedBioStatus === "true");
+  };
+
+  const toggleBiometrics = async () => {
+    if (!isBiometricSupported) {
+      alert("Biometrics not supported or not set up on this device.");
+      return;
+    }
+
+    const newValue = !biometricsEnabled;
+
+    if (newValue) {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: t("biometric_reason") || "Confirm your identity",
+        fallbackLabel: "Use Passcode",
+      });
+
+      if (!result.success) return;
+    }
+
+    setBiometricsEnabled(newValue);
+    await AsyncStorage.setItem("biometrics-enabled", newValue.toString());
   };
 
   const toggleNotifications = async () => {
@@ -99,10 +138,41 @@ export const useSettingsViewModel = () => {
           minute: 0,
         },
       });
-
-      console.log("Notifications successfully scheduled!");
     } catch (e) {
       console.error("Planning Error:", e);
+    }
+  };
+
+  const handleUpdateNickname = async () => {
+    if (newNickname.trim().length < 2) {
+      return setModal({
+        visible: true,
+        type: "error",
+        title: t("error"),
+        message: t("err_short"),
+      });
+    }
+
+    try {
+      const updatedFirebaseUser = await updateNicknameInCloud(newNickname);
+      if (updatedFirebaseUser) {
+        login(updatedFirebaseUser);
+        setNewNickname("");
+        setModal({
+          visible: true,
+          type: "success",
+          title: t("success"),
+          message: t("msg_nick_ok"),
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      setModal({
+        visible: true,
+        type: "error",
+        title: t("error"),
+        message: "Error updating profile",
+      });
     }
   };
 
@@ -114,6 +184,7 @@ export const useSettingsViewModel = () => {
         title: t("error"),
         message: t("err_short"),
       });
+
     updateUserPassword(user.id, newPassword);
     setNewPassword("");
     setShowPassword(false);
@@ -157,6 +228,9 @@ export const useSettingsViewModel = () => {
     logout,
     newPassword,
     setNewPassword,
+    newNickname,
+    setNewNickname,
+    handleUpdateNickname,
     showPassword,
     setShowPassword,
     modal,
@@ -166,5 +240,8 @@ export const useSettingsViewModel = () => {
     theme,
     notificationsEnabled,
     toggleNotifications,
+    biometricsEnabled,
+    toggleBiometrics,
+    isBiometricSupported,
   };
 };

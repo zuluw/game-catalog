@@ -1,6 +1,5 @@
 import { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { updateGame as dbUpdateGame } from "../models/db";
 import { updateGameInCloud } from "../models/firebase";
 import { uploadImage, deleteImageFromCloud } from "../services/ImageService";
 import { useTranslation } from "react-i18next";
@@ -48,16 +47,6 @@ export const useEditViewModel = (game, navigation) => {
           cloudImageUrl = uploadResult.url;
           currentImageId = uploadResult.fileId;
         }
-
-        dbUpdateGame(
-          game.id,
-          title,
-          studio,
-          finalRating,
-          cloudImageUrl,
-          game.firebase_id,
-          currentImageId,
-        );
 
         const cloudData = {
           title: title,

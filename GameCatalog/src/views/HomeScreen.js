@@ -26,7 +26,7 @@ const { width } = Dimensions.get("window");
 export default function HomeScreen({ navigation }) {
   const { t } = useTranslation();
   const { isDarkMode } = useAppTheme();
-  const { user } = useAuth();
+  const { user } = useAuth(); 
   const isFocused = useIsFocused();
   const [isModalVisible, setModalVisible] = React.useState(false);
 
@@ -77,6 +77,10 @@ export default function HomeScreen({ navigation }) {
         subText: "#8E8E93",
         accent: "#F50",
       };
+
+  const tabs = user
+    ? ["games", "studios", "global", "notif"]
+    : ["games", "studios", "global"];
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -160,7 +164,7 @@ export default function HomeScreen({ navigation }) {
         )}
 
         <View style={[styles.tabBar, { backgroundColor: theme.card }]}>
-          {["games", "studios", "global", "notif"].map((tab) => (
+          {tabs.map((tab) => (
             <TouchableOpacity
               key={tab}
               style={[
@@ -232,7 +236,16 @@ export default function HomeScreen({ navigation }) {
               <Text style={[styles.emptyText, { color: theme.subText }]}>
                 {t("no_notif")}
               </Text>
-            ) : null
+            ) : (
+              <Text
+                style={[
+                  styles.emptyText,
+                  { color: theme.subText, marginTop: 40 },
+                ]}
+              >
+                {activeTab === "games" ? "No games found" : ""}
+              </Text>
+            )
           }
           renderItem={({ item }) => {
             if (activeTab === "notif") {
@@ -270,6 +283,7 @@ export default function HomeScreen({ navigation }) {
             return (
               <TouchableOpacity
                 style={[styles.card, { backgroundColor: theme.card }]}
+                on
                 onPress={() =>
                   activeTab !== "studios" &&
                   navigation.navigate("Details", { game: item })

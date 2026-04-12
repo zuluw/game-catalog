@@ -25,6 +25,9 @@ export default function SettingsScreen({ navigation }) {
     logout,
     newPassword,
     setNewPassword,
+    newNickname,
+    setNewNickname,
+    handleUpdateNickname,
     showPassword,
     setShowPassword,
     modal,
@@ -34,6 +37,9 @@ export default function SettingsScreen({ navigation }) {
     theme,
     notificationsEnabled,
     toggleNotifications,
+    biometricsEnabled,
+    toggleBiometrics,
+    isBiometricSupported,
   } = useSettingsViewModel();
 
   return (
@@ -41,7 +47,10 @@ export default function SettingsScreen({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
-      <ScrollView style={[styles.container, { backgroundColor: theme.bg }]}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: theme.bg }]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={28} color={theme.accent} />
@@ -62,12 +71,134 @@ export default function SettingsScreen({ navigation }) {
           <Text style={[styles.username, { color: theme.text }]}>
             {user ? user.username : "GUEST"}
           </Text>
+
+          <Text style={{ color: theme.sub, fontSize: 12, marginTop: 5 }}>
+            {user
+              ? user.email
+              : t("guest_mode_desc") || "Sign in to sync your data"}
+          </Text>
+
           <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-            <Text style={[styles.logoutText, !user && { color: theme.accent }]}>
-              {user ? t("logout_btn") : t("login_btn")}
+            <Text style={[styles.logoutText, { color: theme.accent }]}>
+              {user
+                ? t("logout_btn").toUpperCase()
+                : t("login_btn").toUpperCase()}
             </Text>
           </TouchableOpacity>
         </View>
+
+        {user && (
+          <>
+            <View style={[styles.section, { backgroundColor: theme.card }]}>
+              <View style={styles.row}>
+                <Ionicons
+                  name="create-outline"
+                  size={20}
+                  color={theme.accent}
+                />
+                <Text style={[styles.sectionLabel, { color: theme.text }]}>
+                  {t("change_nickname_title").toUpperCase()}
+                </Text>
+              </View>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.input,
+                    color: theme.text,
+                    marginTop: 15,
+                    marginBottom: 15,
+                  },
+                ]}
+                placeholder={t("nickname_label")}
+                placeholderTextColor="#666"
+                value={newNickname}
+                onChangeText={setNewNickname}
+              />
+              <TouchableOpacity onPress={handleUpdateNickname}>
+                <LinearGradient
+                  colors={[theme.accent, "#FF3D00"]}
+                  style={styles.saveBtn}
+                >
+                  <Text style={styles.saveBtnText}>
+                    {t("update_nickname_btn")}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.section, { backgroundColor: theme.card }]}>
+              <View style={styles.row}>
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={theme.accent}
+                />
+                <Text style={[styles.sectionLabel, { color: theme.text }]}>
+                  {t("change_pass_title").toUpperCase()}
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.passwordInputContainer,
+                  { backgroundColor: theme.input, marginTop: 15 },
+                ]}
+              >
+                <TextInput
+                  style={[styles.flexInput, { color: theme.text }]}
+                  placeholder={t("new_pass_placeholder")}
+                  placeholderTextColor="#666"
+                  secureTextEntry={!showPassword}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeBtn}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye" : "eye-off"}
+                    size={22}
+                    color={theme.sub}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity onPress={handleChangePassword}>
+                <LinearGradient
+                  colors={[theme.accent, "#FF3D00"]}
+                  style={styles.saveBtn}
+                >
+                  <Text style={styles.saveBtnText}>{t("update_btn")}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        {isBiometricSupported && (
+          <View style={[styles.section, { backgroundColor: theme.card }]}>
+            <View style={styles.rowBetween}>
+              <View style={styles.row}>
+                <Ionicons
+                  name="finger-print-outline"
+                  size={20}
+                  color={theme.accent}
+                />
+                <Text style={[styles.sectionLabel, { color: theme.text }]}>
+                  {t("biometric_lock").toUpperCase()}
+                </Text>
+              </View>
+              <Switch
+                value={biometricsEnabled}
+                onValueChange={toggleBiometrics}
+                trackColor={{ false: "#333", true: theme.accent }}
+                thumbColor={"#FFF"}
+              />
+            </View>
+          </View>
+        )}
 
         <View style={[styles.section, { backgroundColor: theme.card }]}>
           <View style={styles.rowBetween}>
@@ -95,54 +226,6 @@ export default function SettingsScreen({ navigation }) {
           </View>
         </View>
 
-        {user && (
-          <View style={[styles.section, { backgroundColor: theme.card }]}>
-            <Text
-              style={[
-                styles.sectionLabel,
-                { color: theme.text, marginBottom: 15 },
-              ]}
-            >
-              {t("change_pass_title")}
-            </Text>
-
-            <View
-              style={[
-                styles.passwordInputContainer,
-                { backgroundColor: theme.input },
-              ]}
-            >
-              <TextInput
-                style={[styles.flexInput, { color: theme.text }]}
-                placeholder={t("new_pass_placeholder")}
-                placeholderTextColor="#666"
-                secureTextEntry={!showPassword}
-                value={newPassword}
-                onChangeText={setNewPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeBtn}
-              >
-                <Ionicons
-                  name={showPassword ? "eye" : "eye-off"}
-                  size={22}
-                  color={theme.sub}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity onPress={handleChangePassword}>
-              <LinearGradient
-                colors={[theme.accent, "#FF3D00"]}
-                style={styles.saveBtn}
-              >
-                <Text style={styles.saveBtnText}>{t("update_btn")}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        )}
-
         <View style={[styles.section, { backgroundColor: theme.card }]}>
           <View style={styles.row}>
             <Ionicons name="language-outline" size={20} color={theme.accent} />
@@ -154,14 +237,18 @@ export default function SettingsScreen({ navigation }) {
             <TouchableOpacity
               style={[
                 styles.langBtn,
-                i18n.language === "ru" && { backgroundColor: theme.accent },
+                i18n.language.startsWith("ru") && {
+                  backgroundColor: theme.accent,
+                },
               ]}
               onPress={() => changeLang("ru")}
             >
               <Text
                 style={[
                   styles.langText,
-                  { color: i18n.language === "ru" ? "#fff" : theme.sub },
+                  {
+                    color: i18n.language.startsWith("ru") ? "#fff" : theme.sub,
+                  },
                 ]}
               >
                 RU
@@ -170,7 +257,7 @@ export default function SettingsScreen({ navigation }) {
             <TouchableOpacity
               style={[
                 styles.langBtn,
-                (i18n.language === "en" || i18n.language.startsWith("en")) && {
+                i18n.language.startsWith("en") && {
                   backgroundColor: theme.accent,
                 },
               ]}
@@ -180,10 +267,7 @@ export default function SettingsScreen({ navigation }) {
                 style={[
                   styles.langText,
                   {
-                    color:
-                      i18n.language === "en" || i18n.language.startsWith("en")
-                        ? "#fff"
-                        : theme.sub,
+                    color: i18n.language.startsWith("en") ? "#fff" : theme.sub,
                   },
                 ]}
               >
@@ -209,6 +293,7 @@ export default function SettingsScreen({ navigation }) {
             />
           </View>
         </View>
+
         <Text style={styles.version}>{t("version_info").toUpperCase()}</Text>
         <View style={{ height: 50 }} />
       </ScrollView>
@@ -233,13 +318,14 @@ const styles = StyleSheet.create({
   section: { padding: 20, borderRadius: 25, marginBottom: 15 },
   username: { fontSize: 24, fontWeight: "900", marginTop: 10 },
   logoutBtn: { marginTop: 15, padding: 10 },
-  logoutText: { color: "#FF4444", fontWeight: "900", fontSize: 12 },
+  logoutText: { fontWeight: "900", fontSize: 13, letterSpacing: 1 },
   passwordInputContainer: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 15,
     marginBottom: 15,
   },
+  input: { borderRadius: 15, padding: 15, fontSize: 14 },
   flexInput: { flex: 1, padding: 15, fontSize: 14 },
   eyeBtn: { paddingHorizontal: 15 },
   saveBtn: { padding: 15, borderRadius: 15, alignItems: "center" },

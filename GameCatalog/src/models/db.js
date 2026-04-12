@@ -18,9 +18,10 @@ export const initDB = () => {
       studio TEXT,
       rating REAL,
       image TEXT,
-      owner_id INTEGER,
+      owner_id TEXT,
       firebase_id TEXT,
-      image_id TEXT 
+      image_id TEXT,
+      location TEXT 
     );
   `);
 
@@ -40,20 +41,21 @@ export const initDB = () => {
       title TEXT,
       body TEXT,
       date TEXT,
-      owner_id INTEGER
+      owner_id TEXT
     );
   `);
 
   try {
-    db.execSync(
-      `ALTER TABLE notification_history ADD COLUMN owner_id INTEGER;`,
-    );
+    db.execSync(`ALTER TABLE notification_history ADD COLUMN owner_id TEXT;`);
   } catch (e) {}
   try {
     db.execSync(`ALTER TABLE games ADD COLUMN firebase_id TEXT;`);
   } catch (e) {}
   try {
     db.execSync(`ALTER TABLE games ADD COLUMN image_id TEXT;`);
+  } catch (e) {}
+  try {
+    db.execSync(`ALTER TABLE games ADD COLUMN location TEXT;`);
   } catch (e) {}
 
   const countResult = db.getFirstSync("SELECT COUNT(*) as count FROM games");
@@ -71,6 +73,47 @@ export const initDB = () => {
   }
 };
 
+export const syncCloudGamesToLocal = (cloudGames) => {
+  db.withTransactionSync(() => {
+    cloudGames.forEach((game) => {
+      const existing = db.getFirstSync(
+        "SELECT id FROM games WHERE firebase_id = ?",
+        [game.id],
+      );
+
+      if (existing) {
+        db.runSync(
+          "UPDATE games SET title = ?, studio = ?, rating = ?, image = ?, image_id = ?, owner_id = ?, location = ? WHERE firebase_id = ?",
+          [
+            game.title,
+            game.studio,
+            game.rating,
+            game.image,
+            game.image_id || null,
+            game.owner_id,
+            game.location || null, 
+            game.id,
+          ],
+        );
+      } else {
+        db.runSync(
+          "INSERT INTO games (title, studio, rating, image, owner_id, firebase_id, image_id, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+          [
+            game.title,
+            game.studio,
+            game.rating,
+            game.image,
+            game.owner_id,
+            game.id,
+            game.image_id || null,
+            game.location || null,
+          ],
+        );
+      }
+    });
+  });
+};
+
 export const addGame = (
   title,
   studio,
@@ -79,10 +122,11 @@ export const addGame = (
   owner_id,
   firebase_id = null,
   image_id = null,
+  location = null,
 ) => {
   return db.runSync(
-    "INSERT INTO games (title, studio, rating, image, owner_id, firebase_id, image_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    [title, studio, rating, image, owner_id, firebase_id, image_id],
+    "INSERT INTO games (title, studio, rating, image, owner_id, firebase_id, image_id, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [title, studio, rating, image, owner_id, firebase_id, image_id, location],
   );
 };
 
@@ -94,35 +138,12 @@ export const updateGame = (
   image,
   firebase_id = null,
   image_id = null,
+  location = null,
 ) => {
   db.runSync(
-    "UPDATE games SET title = ?, studio = ?, rating = ?, image = ?, firebase_id = ?, image_id = ? WHERE id = ?",
-    [title, studio, rating, image, firebase_id, image_id, id],
+    "UPDATE games SET title = ?, studio = ?, rating = ?, image = ?, firebase_id = ?, image_id = ?, location = ? WHERE id = ?",
+    [title, studio, rating, image, firebase_id, image_id, location, id],
   );
-};
-
-export const syncCloudGamesToLocal = (cloudGames) => {
-  cloudGames.forEach((game) => {
-    const existing = db.getFirstSync(
-      "SELECT id FROM games WHERE firebase_id = ?",
-      [game.id],
-    );
-
-    if (!existing) {
-      db.runSync(
-        "INSERT INTO games (title, studio, rating, image, owner_id, firebase_id, image_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [
-          game.title,
-          game.studio,
-          game.rating,
-          game.image,
-          game.owner_id,
-          game.id,
-          game.image_id || null,
-        ],
-      );
-    }
-  });
 };
 
 export const registerUser = (username, password) =>

@@ -54,5 +54,14 @@
   "notif_body": "Time to check if there are any new games in the catalog!",
   "tab_notif": "History",
   "no_notif": "No notifications yet",
-  "notif_received": "Received"
+  "notif_received": "Received",
+  "email_label": "Email",
+  "nickname_label": "New username",
+  "change_nickname_title": "CHANGE USERNAME",
+  "update_nickname_btn": "UPDATE",
+  "msg_nick_ok": "Username updated successfully!",
+  "label_location": "Added at",
+  "biometric_lock": "Biometric Lock",
+  "biometric_reason": "Please authenticate to enter the app",
+  "guest_mode_desc": "guest@email"
 }

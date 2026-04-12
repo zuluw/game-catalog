@@ -17,8 +17,8 @@ export default function AuthScreen({ onReady }) {
   const {
     isLogin,
     setIsLogin,
-    username,
-    setUsername,
+    email,
+    setEmail,
     password,
     setPassword,
     showPassword,
@@ -44,11 +44,12 @@ export default function AuthScreen({ onReady }) {
 
           <TextInput
             style={styles.input}
-            placeholder={t("username_label")}
+            placeholder={t("email_label")}
             placeholderTextColor="#666"
-            value={username}
-            onChangeText={setUsername}
+            value={email}
+            onChangeText={setEmail}
             autoCapitalize="none"
+            keyboardType="email-address"
           />
 
           <View style={styles.passwordWrap}>

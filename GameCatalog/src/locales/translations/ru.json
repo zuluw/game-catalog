@@ -55,5 +55,14 @@
   "notif_body": "Пора проверить, не появились ли новые игры в каталоге!",
   "tab_notif": "История",
   "no_notif": "Уведомлений пока нет",
-  "notif_received": "Получено"
+  "notif_received": "Получено",
+  "email_label": "Почта",
+  "nickname_label": "Новый никнейм",
+  "change_nickname_title": "СМЕНА НИКНЕЙМА",
+  "update_nickname_btn": "ОБНОВИТЬ",
+  "msg_nick_ok": "Никнейм успешно обновлен!",
+  "label_location": "Место добавления",
+  "biometric_lock": "Вход по биометрии",
+  "biometric_reason": "Пожалуйста, подтвердите личность для входа",
+  "guest_mode_desc": "guest@email"
 }

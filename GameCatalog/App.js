@@ -5,9 +5,15 @@ import {
   ActivityIndicator,
   StyleSheet,
   StatusBar,
+  Text,
+  TouchableOpacity,
 } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
+import * as LocalAuthentication from "expo-local-authentication";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
+
 import {
   NavigationContainer,
   DefaultTheme,
@@ -39,9 +45,9 @@ Notifications.setNotificationHandler({
 SplashScreen.preventAutoHideAsync().catch(() => {});
 const Stack = createNativeStackNavigator();
 
-function AppNavigator({ onReady }) {
+function AppNavigator({ onReady, isUnlocked, requestUnlock }) {
   const { isDarkMode } = useAppTheme();
-  const { user, isGuest } = useAuth();
+  const { user, isGuest, isLoading } = useAuth();
 
   useEffect(() => {
     const receivedSub = Notifications.addNotificationReceivedListener(
@@ -64,7 +70,47 @@ function AppNavigator({ onReady }) {
     };
   }, [user]);
 
-  if (!user && !isGuest) return <AuthScreen onReady={onReady} />;
+  if (isLoading) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: isDarkMode ? "#0A0A0A" : "#F2F2F7" },
+        ]}
+        onLayout={onReady}
+      >
+        <ActivityIndicator size="large" color="#FF8C00" />
+      </View>
+    );
+  }
+
+  if (!isUnlocked) {
+    return (
+      <View
+        style={[styles.loadingContainer, { backgroundColor: "#0A0A0A" }]}
+        onLayout={onReady}
+      >
+        <Ionicons name="finger-print" size={80} color="#FF8C00" />
+        <Text
+          style={{
+            color: "white",
+            marginTop: 20,
+            fontSize: 16,
+            fontWeight: "bold",
+          }}
+        >
+          APP LOCKED
+        </Text>
+        <TouchableOpacity style={styles.unlockBtn} onPress={requestUnlock}>
+          <Text style={{ color: "white", fontWeight: "900" }}>UNLOCK</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!user && !isGuest) {
+    return <AuthScreen onReady={onReady} />;
+  }
 
   return (
     <View style={styles.flex} onLayout={onReady}>
@@ -83,13 +129,41 @@ function AppNavigator({ onReady }) {
 
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+
+  const handleBiometricAuth = async () => {
+    try {
+      const isBioEnabled = await AsyncStorage.getItem("biometrics-enabled");
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (isBioEnabled === "true" && hasHardware && isEnrolled) {
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: "Authenticate to enter Game Catalog",
+          fallbackLabel: "Use Passcode",
+          disableDeviceFallback: false,
+        });
+
+        if (result.success) {
+          setIsUnlocked(true);
+        } else {
+          setIsUnlocked(false);
+        }
+      } else {
+        setIsUnlocked(true);
+      }
+    } catch (e) {
+      console.error(e);
+      setIsUnlocked(true);
+    }
+  };
 
   useEffect(() => {
     async function prepare() {
       try {
         await initDB();
         await loadSavedLanguage();
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await handleBiometricAuth();
       } catch (e) {
         console.warn(e);
       } finally {
@@ -100,7 +174,9 @@ export default function App() {
   }, []);
 
   const onLayoutRootView = useCallback(async () => {
-    if (appIsReady) await SplashScreen.hideAsync().catch(() => {});
+    if (appIsReady) {
+      await SplashScreen.hideAsync().catch(() => {});
+    }
   }, [appIsReady]);
 
   if (!appIsReady) {
@@ -120,7 +196,11 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <AppNavigator onReady={onLayoutRootView} />
+        <AppNavigator
+          onReady={onLayoutRootView}
+          isUnlocked={isUnlocked}
+          requestUnlock={handleBiometricAuth}
+        />
       </ThemeProvider>
     </AuthProvider>
   );
@@ -136,4 +216,11 @@ const styles = StyleSheet.create({
   },
   splashImage: { width: 200, height: 200 },
   loader: { marginTop: 30 },
+  unlockBtn: {
+    marginTop: 30,
+    backgroundColor: "#FF8C00",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 15,
+  },
 });
