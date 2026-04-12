@@ -21,13 +21,13 @@ import {
 } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBJHm84bcx5KRpK-rxtt5QkC_nGxyW8Wd4",
-  authDomain: "gamecatalog-af0a5.firebaseapp.com",
-  projectId: "gamecatalog-af0a5",
-  storageBucket: "gamecatalog-af0a5.firebasestorage.app",
-  messagingSenderId: "293641750549",
-  appId: "1:293641750549:web:6f9393a035ca9ddd16661c",
-  measurementId: "G-9T464H2YQH",
+  apiKey: "user-secret",
+  authDomain: "user-secret",
+  projectId: "user-secret",
+  storageBucket: "user-secret",
+  messagingSenderId: "user-secret",
+  appId: "user-secret",
+  measurementId: "user-secret",
 };
 
 const app = initializeApp(firebaseConfig);
